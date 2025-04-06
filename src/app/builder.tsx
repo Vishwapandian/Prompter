@@ -1,15 +1,34 @@
 import React, { useState, useRef } from 'react';
 import { Code, Bug, Beaker, Save, Play, Settings, Undo, X, PlusCircle, GripVertical } from 'lucide-react';
 
+// TypeScript interfaces for our data structures
+interface PromptCategory {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+}
+
+interface PromptBlockType {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface PromptBlockData {
+  id: string;
+  type: string;
+  content: string;
+}
+
 // Sample prompt templates
-const promptCategories = [
+const promptCategories: PromptCategory[] = [
   { id: 'feature', name: 'New Feature', icon: <Code size={18} /> },
   { id: 'bugfix', name: 'Bug Fix', icon: <Bug size={18} /> },
   { id: 'test', name: 'Test Cases', icon: <Beaker size={18} /> }
 ];
 
 // Sample prompt blocks
-const promptBlockTypes = [
+const promptBlockTypes: PromptBlockType[] = [
   { id: 'context', name: 'Context', color: 'bg-blue-500' },
   { id: 'requirement', name: 'Requirement', color: 'bg-green-500' },
   { id: 'constraint', name: 'Constraint', color: 'bg-red-500' },
@@ -17,9 +36,32 @@ const promptBlockTypes = [
   { id: 'output_format', name: 'Output Format', color: 'bg-yellow-500' }
 ];
 
+// Props interface for PromptBlock component
+interface PromptBlockProps {
+  id: string;
+  content: string;
+  type: string;
+  onRemove: (id: string) => void;
+  onContentChange: (id: string, content: string) => void;
+  onMoveUp: (id: string) => void;
+  onMoveDown: (id: string) => void;
+  isFirst: boolean;
+  isLast: boolean;
+}
+
 // Simple drag and drop implementation
-const PromptBlock = ({ id, content, type, onRemove, onContentChange, onMoveUp, onMoveDown, isFirst, isLast }) => {
-  const blockType = promptBlockTypes.find(b => b.id === type);
+const PromptBlock: React.FC<PromptBlockProps> = ({ 
+  id, 
+  content, 
+  type, 
+  onRemove, 
+  onContentChange, 
+  onMoveUp, 
+  onMoveDown, 
+  isFirst, 
+  isLast 
+}) => {
+  const blockType = promptBlockTypes.find(b => b.id === type) || promptBlockTypes[0];
   
   return (
     <div className="bg-white rounded-lg shadow-md mb-3 overflow-hidden">
@@ -32,16 +74,28 @@ const PromptBlock = ({ id, content, type, onRemove, onContentChange, onMoveUp, o
         </div>
         <div className="flex items-center space-x-2">
           {!isFirst && (
-            <button onClick={() => onMoveUp(id)} className="hover:bg-white hover:bg-opacity-20 p-1 rounded">
+            <button 
+              onClick={() => onMoveUp(id)} 
+              className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
+              type="button"
+            >
               ↑
             </button>
           )}
           {!isLast && (
-            <button onClick={() => onMoveDown(id)} className="hover:bg-white hover:bg-opacity-20 p-1 rounded">
+            <button 
+              onClick={() => onMoveDown(id)} 
+              className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
+              type="button"
+            >
               ↓
             </button>
           )}
-          <button onClick={() => onRemove(id)} className="hover:bg-white hover:bg-opacity-20 p-1 rounded">
+          <button 
+            onClick={() => onRemove(id)} 
+            className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
+            type="button"
+          >
             <X size={16} />
           </button>
         </div>
@@ -60,32 +114,32 @@ const PromptBlock = ({ id, content, type, onRemove, onContentChange, onMoveUp, o
 };
 
 // Main Prompt Builder component
-const PromptBuilder = () => {
-  const [selectedCategory, setSelectedCategory] = useState('feature');
-  const [promptBlocks, setPromptBlocks] = useState([
+const PromptBuilder: React.FC = () => {
+  const [selectedCategory, setSelectedCategory] = useState<string>('feature');
+  const [promptBlocks, setPromptBlocks] = useState<PromptBlockData[]>([
     { id: '1', type: 'context', content: 'I am working on a React application that uses Next.js and Tailwind CSS.' },
     { id: '2', type: 'requirement', content: 'Create a component for user authentication that includes login and signup forms.' }
   ]);
-  const [response, setResponse] = useState('');
+  const [response, setResponse] = useState<string>('');
   
-  const addBlock = (type) => {
+  const addBlock = (type: string): void => {
     setPromptBlocks([
       ...promptBlocks,
       { id: Date.now().toString(), type, content: '' }
     ]);
   };
   
-  const removeBlock = (id) => {
+  const removeBlock = (id: string): void => {
     setPromptBlocks(promptBlocks.filter(block => block.id !== id));
   };
   
-  const updateBlockContent = (id, content) => {
+  const updateBlockContent = (id: string, content: string): void => {
     setPromptBlocks(
       promptBlocks.map(block => block.id === id ? { ...block, content } : block)
     );
   };
   
-  const moveBlockUp = (id) => {
+  const moveBlockUp = (id: string): void => {
     const index = promptBlocks.findIndex(block => block.id === id);
     if (index > 0) {
       const newBlocks = [...promptBlocks];
@@ -96,7 +150,7 @@ const PromptBuilder = () => {
     }
   };
   
-  const moveBlockDown = (id) => {
+  const moveBlockDown = (id: string): void => {
     const index = promptBlocks.findIndex(block => block.id === id);
     if (index < promptBlocks.length - 1) {
       const newBlocks = [...promptBlocks];
@@ -107,17 +161,17 @@ const PromptBuilder = () => {
     }
   };
   
-  const generatePrompt = () => {
+  const generatePrompt = (): void => {
     const fullPrompt = promptBlocks.map(block => {
       const blockType = promptBlockTypes.find(b => b.id === block.type);
-      return `[${blockType.name.toUpperCase()}]\n${block.content}\n`;
+      return `[${blockType?.name.toUpperCase() || 'BLOCK'}]\n${block.content}\n`;
     }).join('\n');
     
     // This would actually call the backend API
     setResponse("// Sample generated response based on your prompt:\n\nimport React, { useState } from 'react';\n\nconst AuthComponent = () => {\n  const [isLogin, setIsLogin] = useState(true);\n  const [formData, setFormData] = useState({\n    email: '',\n    password: '',\n    name: ''\n  });\n\n  // Form handling logic would go here\n\n  return (\n    <div className=\"max-w-md mx-auto bg-white p-6 rounded-lg shadow-md\">\n      <h2 className=\"text-2xl font-bold mb-6 text-center\">\n        {isLogin ? 'Log In' : 'Sign Up'}\n      </h2>\n      {/* Form fields would go here */}\n      <div className=\"mt-4 text-center\">\n        <button\n          type=\"button\"\n          onClick={() => setIsLogin(!isLogin)}\n          className=\"text-blue-500 hover:underline\"\n        >\n          {isLogin ? 'Need an account? Sign up' : 'Already have an account? Log in'}\n        </button>\n      </div>\n    </div>\n  );\n};\n\nexport default AuthComponent;");
   };
   
-  const saveTemplate = () => {
+  const saveTemplate = (): void => {
     // This would save the template to the backend
     alert('Template saved successfully!');
   };
@@ -131,7 +185,7 @@ const PromptBuilder = () => {
               <span className="font-bold text-xl text-blue-600">AI Prompt Builder</span>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="bg-gray-100 p-2 rounded-full hover:bg-gray-200">
+              <button className="bg-gray-100 p-2 rounded-full hover:bg-gray-200" type="button">
                 <Settings size={20} />
               </button>
               <div className="h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center">
@@ -158,6 +212,7 @@ const PromptBuilder = () => {
                         ? 'bg-blue-50 text-blue-700'
                         : 'hover:bg-gray-50'
                     }`}
+                    type="button"
                   >
                     <span className="mr-3">{category.icon}</span>
                     <span>{category.name}</span>
@@ -174,6 +229,7 @@ const PromptBuilder = () => {
                     key={blockType.id}
                     onClick={() => addBlock(blockType.id)}
                     className="w-full flex items-center p-2 rounded-md text-left hover:bg-gray-50"
+                    type="button"
                   >
                     <span className={`w-4 h-4 rounded-full mr-3 ${blockType.color}`}></span>
                     <span>{blockType.name}</span>
@@ -191,12 +247,16 @@ const PromptBuilder = () => {
                   {promptCategories.find(c => c.id === selectedCategory)?.name} Prompt
                 </h2>
                 <div className="flex space-x-2">
-                  <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md">
+                  <button 
+                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md"
+                    type="button"
+                  >
                     <Undo size={18} />
                   </button>
                   <button 
                     onClick={saveTemplate}
                     className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md"
+                    type="button"
                   >
                     <Save size={18} />
                   </button>
@@ -223,6 +283,7 @@ const PromptBuilder = () => {
               <button 
                 onClick={() => addBlock('context')}
                 className="w-full mt-4 border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-500 flex items-center justify-center hover:bg-gray-50"
+                type="button"
               >
                 <PlusCircle size={18} className="mr-2" />
                 <span>Add Block</span>
@@ -231,6 +292,7 @@ const PromptBuilder = () => {
               <button
                 onClick={generatePrompt}
                 className="w-full mt-6 bg-blue-600 text-white py-3 rounded-lg font-medium flex items-center justify-center hover:bg-blue-700"
+                type="button"
               >
                 <Play size={18} className="mr-2" />
                 <span>Generate</span>
