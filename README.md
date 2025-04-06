@@ -124,3 +124,5 @@ The tool is aimed at developers, AI engineers, and prompt designers who frequent
 ---
 
 Can you create a modern web frontend for this? Be inspired by Scratch drag and drop with input boxes to create prompts.
+
+AIzaSyDEMB0rLa-BgsWB2EUjvRs1-dXo4w7pJlY
