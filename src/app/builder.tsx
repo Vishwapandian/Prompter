@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Code, Bug, Beaker, Save, Play, Settings, Undo, X, PlusCircle, GripVertical } from 'lucide-react';
+import { Code, Bug, Beaker, Save, Play, Settings, Undo, X, Sun, GripVertical, Home, Moon} from 'lucide-react';
 
 // Initialize dark mode from system preference or localStorage on client side
 // We'll place this functionality inside a useEffect in the component instead
@@ -265,8 +265,11 @@ const PromptBuilder: React.FC = () => {
       <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center">
-              <span className={`font-bold text-xl ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>PromptBricks</span>
+            <div className="flex items-center space-x-4">
+              <a href="/" className={`flex items-center ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}>
+                <Home size={20} className="mr-2" />
+                <span className="font-bold text-xl">PromptBricks</span>
+              </a>
             </div>
             <div className="flex items-center space-x-4">
               <button 
@@ -275,7 +278,7 @@ const PromptBuilder: React.FC = () => {
                 type="button"
                 aria-label="Toggle dark mode"
               >
-                {darkMode ? '☀️' : '🌙'}
+                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
               <button className={`${darkMode ? 'bg-gray-700' : 'bg-gray-100'} p-2 rounded-full ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'}`} type="button">
                 <Settings size={20} className={darkMode ? 'text-gray-300' : ''} />
@@ -373,7 +376,7 @@ const PromptBuilder: React.FC = () => {
               
               <div className="prompt-blocks">
                 {promptBlocks.map((block, index) => (
-                                      <div 
+                  <div 
                     key={block.id} 
                     onDragOver={(e) => handleDragOver(e, block.id)}
                     onDrop={(e) => handleDrop(e, block.id)}

@@ -1,5 +1,7 @@
-import PromptBuilder from './builder'; // Assuming you'll save the PromptBuilder component as builder.tsx
+"use client";
 
-export default function Home() {
-  return <PromptBuilder />;
+import Home from './home';
+
+export default function HomePage() {
+  return <Home />;
 }
