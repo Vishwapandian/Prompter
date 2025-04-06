@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Code, Bug, Beaker, Save, Play, Settings, Undo, X, Sun, GripVertical, Home, Moon} from 'lucide-react';
+import Image from 'next/image';
 
 // Initialize dark mode from system preference or localStorage on client side
 // We'll place this functionality inside a useEffect in the component instead
@@ -267,7 +268,7 @@ const PromptBuilder: React.FC = () => {
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center space-x-4">
               <a href="/" className={`flex items-center ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}>
-                <span className="font-bold text-xl">PromptBricks</span>
+                <Image src="/logo.png" alt="PromptBricks Logo" width={128} height={128} className="mr-2" />
               </a>
             </div>
             <div className="flex items-center space-x-4">

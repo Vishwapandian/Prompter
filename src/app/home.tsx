@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Play, Moon, Sun, Settings, Code} from 'lucide-react';
+import Image from 'next/image';
 
 export default function Home() {
   const [darkMode, setDarkMode] = useState<boolean>(false);
@@ -56,7 +57,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
-              <span className={`font-bold text-xl ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>PromptBricks</span>
+              <Image src="/logo.png" alt="PromptBricks Logo" width={128} height={128} className="mr-2" />
             </div>
             <div className="flex items-center space-x-4">
               <button 
