@@ -252,8 +252,11 @@ const PromptBuilder: React.FC = () => {
       return `[${blockType?.name.toUpperCase() || 'BLOCK'}]\n${block.content}\n`;
     }).join('\n');
 
-    const fullPrompt = `You are an expert AI prompt engineer. Based on the context provided by the user, generate a clear, detailed, and actionable prompt that instructs another AI to perform the intended task. First, understand the user's objective and fill in any missing but necessary details. Then, write a well-structured prompt that includes specific instructions, desired output format, tone, and any constraints if applicable. Always output only the final refined prompt, ready to be used
-
+    const fullPrompt = `You are an expert AI prompt engineer.
+     Based on the context provided by the user, generate a clear, detailed, and actionable prompt that instructs another AI to perform the intended task. 
+    First, understand the user's objective and fill in any missing but necessary details. 
+    Then, write a well-structured prompt that includes specific instructions, desired output format, tone, and any constraints if applicable. 
+    Always output only the final refined prompt, ready to be used
 ${promptBlocks2}`;
     
     try {
