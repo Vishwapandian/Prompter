@@ -81,7 +81,7 @@ export default function Home() {
               darkMode ? 'bg-blue-900/30 text-blue-300 border border-blue-800/50' : 'bg-blue-100 text-blue-800'
             }`}>
               <span className={`w-2 h-2 rounded-full mr-2 ${darkMode ? 'bg-blue-400' : 'bg-blue-600'} animate-pulse`}></span>
-              New Visual Prompt Builder
+              Now Beta Testing
             </span>
           </div>
           

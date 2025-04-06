@@ -267,7 +267,6 @@ const PromptBuilder: React.FC = () => {
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center space-x-4">
               <a href="/" className={`flex items-center ${darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}>
-                <Home size={20} className="mr-2" />
                 <span className="font-bold text-xl">PromptBricks</span>
               </a>
             </div>
