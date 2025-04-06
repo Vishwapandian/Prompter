@@ -3,6 +3,22 @@
 import React, { useState, useRef } from 'react';
 import { Code, Bug, Beaker, Save, Play, Settings, Undo, X, PlusCircle, GripVertical } from 'lucide-react';
 
+// Initialize dark mode from system preference or localStorage on client side
+if (typeof window !== 'undefined') {
+  // Check localStorage first
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else if (savedTheme === 'light') {
+    document.documentElement.classList.remove('dark');
+  } else {
+    // If no saved preference, check system preference
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark');
+    }
+  }
+}
+
 // TypeScript interfaces for our data structures
 interface PromptCategory {
   id: string;
@@ -64,9 +80,10 @@ const PromptBlock: React.FC<PromptBlockProps> = ({
   isLast 
 }) => {
   const blockType = promptBlockTypes.find(b => b.id === type) || promptBlockTypes[0];
+  const darkMode = document.documentElement.classList.contains('dark');
   
   return (
-    <div className="bg-white rounded-lg shadow-md mb-3 overflow-hidden">
+    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md mb-3 overflow-hidden`}>
       <div className={`${blockType.color} px-4 py-2 flex justify-between items-center text-white`}>
         <div className="flex items-center">
           <span className="mr-2">
@@ -106,7 +123,7 @@ const PromptBlock: React.FC<PromptBlockProps> = ({
         <textarea 
           value={content} 
           onChange={(e) => onContentChange(id, e.target.value)}
-          className="w-full p-2 border border-gray-200 rounded resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className={`w-full p-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-800'} rounded resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
           rows={3}
           placeholder={`Enter ${blockType.name.toLowerCase()} here...`}
         />
@@ -117,7 +134,10 @@ const PromptBlock: React.FC<PromptBlockProps> = ({
 
 // Main Prompt Builder component
 const PromptBuilder: React.FC = () => {
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(
+    typeof window !== 'undefined' && 
+    document.documentElement.classList.contains('dark')
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>('feature');
   const [promptBlocks, setPromptBlocks] = useState<PromptBlockData[]>([
     { id: '1', type: 'context', content: 'I am working on a React application that uses Next.js and Tailwind CSS.' },
@@ -127,12 +147,19 @@ const PromptBuilder: React.FC = () => {
   
   // Toggle dark mode
   const toggleDarkMode = (): void => {
-    setDarkMode(!darkMode);
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    
     // Apply dark mode class to the document
-    if (!darkMode) {
+    if (newDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+    }
+    
+    // You might want to store user preference in localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('theme', newDarkMode ? 'dark' : 'light');
     }
   };
   
@@ -191,7 +218,7 @@ const PromptBuilder: React.FC = () => {
   };
   
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'dark bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
       <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
@@ -257,7 +284,7 @@ const PromptBuilder: React.FC = () => {
                     className={`w-full flex items-center p-2 rounded-md text-left ${
                       darkMode 
                         ? 'hover:bg-gray-700 text-gray-300' 
-                        : 'hover:bg-gray-50'
+                        : 'hover:bg-gray-50 text-gray-700'
                     }`}
                     type="button"
                   >
