@@ -133,6 +133,7 @@ const PromptBuilder: React.FC = () => {
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
   const [draggedOver, setDraggedOver] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
   // Initialize dark mode when component mounts
   useEffect(() => {
@@ -241,14 +242,56 @@ const PromptBuilder: React.FC = () => {
     setDraggedOver(null);
   };
   
-  const generatePrompt = (): void => {
-    const fullPrompt = promptBlocks.map(block => {
+  const generatePrompt = async (): Promise<void> => {
+    setIsLoading(true);
+    
+    // Compose the prompt from our blocks
+    const promptBlocks2 = promptBlocks.map(block => {
       const blockType = promptBlockTypes.find(b => b.id === block.type);
       return `[${blockType?.name.toUpperCase() || 'BLOCK'}]\n${block.content}\n`;
     }).join('\n');
+
+    const fullPrompt = `You are an expert AI prompt engineer. Based on the context provided by the user, generate a clear, detailed, and actionable prompt that instructs another AI to perform the intended task. First, understand the user's objective and fill in any missing but necessary details. Then, write a well-structured prompt that includes specific instructions, desired output format, tone, and any constraints if applicable. Always output only the final refined prompt, ready to be used
+
+${promptBlocks2}`;
     
-    // This would actually call the backend API
-    setResponse("// Sample generated response based on your prompt:\n\nimport React, { useState } from 'react';\n\nconst AuthComponent = () => {\n  const [isLogin, setIsLogin] = useState(true);\n  const [formData, setFormData] = useState({\n    email: '',\n    password: '',\n    name: ''\n  });\n\n  // Form handling logic would go here\n\n  return (\n    <div className=\"max-w-md mx-auto bg-white p-6 rounded-lg shadow-md\">\n      <h2 className=\"text-2xl font-bold mb-6 text-center\">\n        {isLogin ? 'Log In' : 'Sign Up'}\n      </h2>\n      {/* Form fields would go here */}\n      <div className=\"mt-4 text-center\">\n        <button\n          type=\"button\"\n          onClick={() => setIsLogin(!isLogin)}\n          className=\"text-blue-500 hover:underline\"\n        >\n          {isLogin ? 'Need an account? Sign up' : 'Already have an account? Log in'}\n        </button>\n      </div>\n    </div>\n  );\n};\n\nexport default AuthComponent;");
+    try {
+      // Make API call to Gemini
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // In a real app, this would be securely stored
+          'x-goog-api-key': process.env.NEXT_PUBLIC_GEMINI_API_KEY || 'AIzaSyDEMB0rLa-BgsWB2EUjvRs1-dXo4w7pJlY' 
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: fullPrompt
+            }]
+          }]
+        })
+      });
+      
+      const data = await response.json();
+      
+      // Extract the response text from Gemini API
+      if (data.candidates && data.candidates.length > 0 && 
+          data.candidates[0].content && 
+          data.candidates[0].content.parts && 
+          data.candidates[0].content.parts.length > 0) {
+        setResponse(data.candidates[0].content.parts[0].text);
+      } else if (data.error) {
+        setResponse(`Error: ${data.error.message || 'Unknown error occurred'}`);
+      } else {
+        setResponse("No response received from the API.");
+      }
+    } catch (error) {
+      console.error('Error generating prompt:', error);
+      setResponse(`Error generating response: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const saveTemplate = (): void => {
@@ -400,15 +443,25 @@ const PromptBuilder: React.FC = () => {
               
               <button
                 onClick={generatePrompt}
+                disabled={isLoading}
                 className={`w-full mt-6 ${
                   darkMode 
-                    ? 'bg-blue-700 hover:bg-blue-800' 
-                    : 'bg-blue-600 hover:bg-blue-700'
-                } text-white py-3 rounded-lg font-medium flex items-center justify-center transition-colors`}
+                    ? `bg-blue-700 ${!isLoading && 'hover:bg-blue-800'}` 
+                    : `bg-blue-600 ${!isLoading && 'hover:bg-blue-700'}`
+                } text-white py-3 rounded-lg font-medium flex items-center justify-center transition-colors ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                 type="button"
               >
-                <Play size={18} className="mr-2" />
-                <span>Generate</span>
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play size={18} className="mr-2" />
+                    <span>Generate</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -418,7 +471,13 @@ const PromptBuilder: React.FC = () => {
             <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-5 rounded-lg shadow-sm h-full`}>
               <h2 className={`text-lg font-medium mb-4 ${darkMode ? 'text-white' : ''}`}>AI Response</h2>
               <div className={`${darkMode ? 'bg-gray-900' : 'bg-gray-50'} p-4 rounded-lg h-[calc(100%-4rem)] overflow-auto`}>
-                <pre className={`text-sm whitespace-pre-wrap ${darkMode ? 'text-gray-300' : ''}`}>{response}</pre>
+                {isLoading ? (
+                  <div className="flex justify-center items-center h-full">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : (
+                  <pre className={`text-sm whitespace-pre-wrap ${darkMode ? 'text-gray-300' : ''}`}>{response}</pre>
+                )}
               </div>
             </div>
           </div>
