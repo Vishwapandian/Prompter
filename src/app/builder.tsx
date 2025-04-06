@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Code, Bug, Beaker, Save, Play, Settings, Undo, X, Sun, GripVertical, Home, Moon} from 'lucide-react';
+import { Code, Bug, Beaker, Save, Play, Settings, Undo, X, Sun, GripVertical, Home, Moon, Copy, Check} from 'lucide-react';
 import Image from 'next/image';
 
 // Initialize dark mode from system preference or localStorage on client side
@@ -134,6 +134,7 @@ const PromptBuilder: React.FC = () => {
   const [mounted, setMounted] = useState<boolean>(false);
   const [draggedOver, setDraggedOver] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isCopied, setIsCopied] = useState<boolean>(false);
   
   // Initialize dark mode when component mounts
   useEffect(() => {
@@ -297,6 +298,20 @@ ${promptBlocks2}`;
   const saveTemplate = (): void => {
     // This would save the template to the backend
     alert('Template saved successfully!');
+  };
+  
+  // Add function to copy response to clipboard
+  const copyToClipboard = () => {
+    if (response) {
+      navigator.clipboard.writeText(response)
+        .then(() => {
+          setIsCopied(true);
+          setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+        })
+        .catch(err => {
+          console.error('Failed to copy: ', err);
+        });
+    }
   };
   
   // Avoid rendering UI elements that depend on client-side features until after mounting
@@ -469,7 +484,31 @@ ${promptBlocks2}`;
           {/* Right side - AI response */}
           <div className="col-span-4">
             <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-5 rounded-lg shadow-sm h-full`}>
-              <h2 className={`text-lg font-medium mb-4 ${darkMode ? 'text-white' : ''}`}>AI Response</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className={`text-lg font-medium ${darkMode ? 'text-white' : ''}`}>AI Response</h2>
+                <button
+                  onClick={copyToClipboard}
+                  className={`p-2 rounded-md ${
+                    darkMode 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  } transition-colors flex items-center`}
+                  disabled={!response || isLoading}
+                  type="button"
+                >
+                  {isCopied ? (
+                    <>
+                      <Check size={16} className="mr-1" />
+                      <span className="text-sm">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={16} className="mr-1" />
+                      <span className="text-sm">Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
               <div className={`${darkMode ? 'bg-gray-900' : 'bg-gray-50'} p-4 rounded-lg h-[calc(100%-4rem)] overflow-auto`}>
                 {isLoading ? (
                   <div className="flex justify-center items-center h-full">
