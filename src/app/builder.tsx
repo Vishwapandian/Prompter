@@ -1,23 +1,10 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Code, Bug, Beaker, Save, Play, Settings, Undo, X, PlusCircle, GripVertical } from 'lucide-react';
 
 // Initialize dark mode from system preference or localStorage on client side
-if (typeof window !== 'undefined') {
-  // Check localStorage first
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme === 'dark') {
-    document.documentElement.classList.add('dark');
-  } else if (savedTheme === 'light') {
-    document.documentElement.classList.remove('dark');
-  } else {
-    // If no saved preference, check system preference
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      document.documentElement.classList.add('dark');
-    }
-  }
-}
+// We'll place this functionality inside a useEffect in the component instead
 
 // TypeScript interfaces for our data structures
 interface PromptCategory {
@@ -65,9 +52,10 @@ interface PromptBlockProps {
   onMoveDown: (id: string) => void;
   isFirst: boolean;
   isLast: boolean;
+  darkMode: boolean;
 }
 
-// Simple drag and drop implementation
+// Draggable implementation
 const PromptBlock: React.FC<PromptBlockProps> = ({ 
   id, 
   content, 
@@ -77,45 +65,51 @@ const PromptBlock: React.FC<PromptBlockProps> = ({
   onMoveUp, 
   onMoveDown, 
   isFirst, 
-  isLast 
+  isLast,
+  darkMode 
 }) => {
   const blockType = promptBlockTypes.find(b => b.id === type) || promptBlockTypes[0];
-  const darkMode = document.documentElement.classList.contains('dark');
+  const dragRef = useRef<HTMLDivElement>(null);
+  
+  // Drag start handler
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', id);
+    // Apply opacity directly to the current target without setTimeout
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.3'; // More transparent as requested
+    }
+  };
+  
+  // Drag end handler
+  const handleDragEnd = (e: React.DragEvent) => {
+    // Reset opacity directly without relying on classList
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+  };
   
   return (
-    <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md mb-3 overflow-hidden`}>
+    <div 
+      ref={dragRef}
+      draggable={true}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} rounded-lg shadow-md mb-3 overflow-hidden cursor-move`}
+    >
       <div className={`${blockType.color} px-4 py-2 flex justify-between items-center text-white`}>
         <div className="flex items-center">
           <span className="mr-2">
-            <GripVertical size={16} className="cursor-move opacity-70" />
+            <GripVertical size={16} className="opacity-70" />
           </span>
           <span className="font-medium">{blockType.name}</span>
         </div>
-        <div className="flex items-center space-x-2">
-          {!isFirst && (
-            <button 
-              onClick={() => onMoveUp(id)} 
-              className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
-              type="button"
-            >
-              ↑
-            </button>
-          )}
-          {!isLast && (
-            <button 
-              onClick={() => onMoveDown(id)} 
-              className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
-              type="button"
-            >
-              ↓
-            </button>
-          )}
+        <div className="flex items-center">
           <button 
             onClick={() => onRemove(id)} 
-            className="hover:bg-white hover:bg-opacity-20 p-1 rounded"
+            className="p-1 rounded focus:outline-none hover:bg-opacity-20 hover:bg-transparent"
             type="button"
           >
-            <X size={16} />
+            <X size={16} className="text-white" />
           </button>
         </div>
       </div>
@@ -126,6 +120,7 @@ const PromptBlock: React.FC<PromptBlockProps> = ({
           className={`w-full p-2 border ${darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-800'} rounded resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
           rows={3}
           placeholder={`Enter ${blockType.name.toLowerCase()} here...`}
+          onClick={(e) => e.stopPropagation()} // Prevent drag when clicking on textarea
         />
       </div>
     </div>
@@ -134,10 +129,29 @@ const PromptBlock: React.FC<PromptBlockProps> = ({
 
 // Main Prompt Builder component
 const PromptBuilder: React.FC = () => {
-  const [darkMode, setDarkMode] = useState<boolean>(
-    typeof window !== 'undefined' && 
-    document.documentElement.classList.contains('dark')
-  );
+  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [mounted, setMounted] = useState<boolean>(false);
+  const [draggedOver, setDraggedOver] = useState<string | null>(null);
+  
+  // Initialize dark mode when component mounts
+  useEffect(() => {
+    // Check localStorage first
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      setDarkMode(true);
+    } else if (savedTheme === 'light') {
+      document.documentElement.classList.remove('dark');
+      setDarkMode(false);
+    } else {
+      // If no saved preference, check system preference
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+        setDarkMode(true);
+      }
+    }
+    setMounted(true);
+  }, []);
   const [selectedCategory, setSelectedCategory] = useState<string>('feature');
   const [promptBlocks, setPromptBlocks] = useState<PromptBlockData[]>([
     { id: '1', type: 'context', content: 'I am working on a React application that uses Next.js and Tailwind CSS.' },
@@ -202,6 +216,30 @@ const PromptBuilder: React.FC = () => {
     }
   };
   
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    setDraggedOver(id);
+  };
+  
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const sourceId = e.dataTransfer.getData('text/plain');
+    
+    if (sourceId !== targetId) {
+      const sourceIndex = promptBlocks.findIndex(block => block.id === sourceId);
+      const targetIndex = promptBlocks.findIndex(block => block.id === targetId);
+      
+      const newBlocks = [...promptBlocks];
+      const [movedBlock] = newBlocks.splice(sourceIndex, 1);
+      newBlocks.splice(targetIndex, 0, movedBlock);
+      
+      setPromptBlocks(newBlocks);
+    }
+    
+    setDraggedOver(null);
+  };
+  
   const generatePrompt = (): void => {
     const fullPrompt = promptBlocks.map(block => {
       const blockType = promptBlockTypes.find(b => b.id === block.type);
@@ -217,13 +255,18 @@ const PromptBuilder: React.FC = () => {
     alert('Template saved successfully!');
   };
   
+  // Avoid rendering UI elements that depend on client-side features until after mounting
+  if (!mounted) {
+    return <div className="min-h-screen bg-gray-50"></div>;
+  }
+  
   return (
     <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'dark bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-800'}`}>
       <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
-              <span className={`font-bold text-xl ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>AI Prompt Builder</span>
+              <span className={`font-bold text-xl ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>PromptBricks</span>
             </div>
             <div className="flex items-center space-x-4">
               <button 
@@ -330,33 +373,27 @@ const PromptBuilder: React.FC = () => {
               
               <div className="prompt-blocks">
                 {promptBlocks.map((block, index) => (
-                  <PromptBlock
-                    key={block.id}
-                    id={block.id}
-                    type={block.type}
-                    content={block.content}
-                    onRemove={removeBlock}
-                    onContentChange={updateBlockContent}
-                    onMoveUp={moveBlockUp}
-                    onMoveDown={moveBlockDown}
-                    isFirst={index === 0}
-                    isLast={index === promptBlocks.length - 1}
-                  />
+                                      <div 
+                    key={block.id} 
+                    onDragOver={(e) => handleDragOver(e, block.id)}
+                    onDrop={(e) => handleDrop(e, block.id)}
+                    className={`${draggedOver === block.id ? (darkMode ? 'bg-gray-700/50' : 'bg-gray-100/50') : ''} rounded-lg transition-colors duration-150 p-1`}
+                  >
+                    <PromptBlock
+                      id={block.id}
+                      type={block.type}
+                      content={block.content}
+                      onRemove={removeBlock}
+                      onContentChange={updateBlockContent}
+                      onMoveUp={moveBlockUp}
+                      onMoveDown={moveBlockDown}
+                      isFirst={index === 0}
+                      isLast={index === promptBlocks.length - 1}
+                      darkMode={darkMode}
+                    />
+                  </div>
                 ))}
               </div>
-              
-              <button 
-                onClick={() => addBlock('context')}
-                className={`w-full mt-4 border-2 border-dashed ${
-                  darkMode 
-                    ? 'border-gray-600 text-gray-400 hover:bg-gray-700' 
-                    : 'border-gray-300 text-gray-500 hover:bg-gray-50'
-                } rounded-lg p-4 flex items-center justify-center`}
-                type="button"
-              >
-                <PlusCircle size={18} className="mr-2" />
-                <span>Add Block</span>
-              </button>
               
               <button
                 onClick={generatePrompt}
